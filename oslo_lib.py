@@ -5,41 +5,44 @@ import matplotlib.pyplot as plt
 from shapely.ops import Point
 import tensorly as tl
 from tensorly.decomposition import non_negative_parafac, non_negative_tucker
+from datetime import datetime
 
-
-def obtain_url(y, m):
+def obtain_url(y, m, provider):
     assert m>=1 and m<=12
     if m < 10:
         m=f"0{m}"
-    return f"https://data.urbansharing.com/oslobysykkel.no/trips/v1/{y}/{m}.json"
+    return f"https://data.urbansharing.com/{provider}/trips/v1/{y}/{m}.json"
 
-def urls(years, months):
+def urls(years, months, provider):
     for y in years:
         for m in months:
             if (y==2019 and m<4) or (y==2023 and m>7):
                 pass
             else:
-                yield obtain_url(y, m)
+                yield obtain_url(y, m, provider)
 
 def retrieve_dataset(url):
-    r = requests.get(url)
-    json_content = r.json()
-    df = pd.DataFrame(json_content)
+    try:
+        r = requests.get(url)
+        json_content = r.json()
+        df = pd.DataFrame(json_content)
+    except:
+        df = pd.DataFrame()
     
-    if len(df)>0:    
-        print(f'no data for {url}')
-        df.started_at = pd.to_datetime(df.started_at)
-        df.ended_at = pd.to_datetime(df.ended_at)
+    if (n_records := len(df) ) >0:
+        print(datetime.now().isoformat(), n_records, 'records')
+        df.started_at = pd.to_datetime(df.started_at, format='mixed')
+        df.ended_at = pd.to_datetime(df.ended_at, format='mixed')
         df.start_station_id = df.start_station_id.astype(int)
         df.end_station_id = df.end_station_id.astype(int)
         
     return df
 
-def collect_data(years, months):
+def collect_data(years, months, provider = 'oslobysykkel.no'):
     
     global_df = pd.DataFrame()
     
-    for url in urls(years, months):
+    for url in urls(years, months, provider):
         print(url)
         df = retrieve_dataset(url)
         global_df = pd.concat([global_df, df])
@@ -78,11 +81,11 @@ def get_processed_trips(trips, station_distances):
     return trips
 
 
-def get_geostations(stations):
+def get_geostations(stations, city_crs):
     stations['geometry'] = stations.apply(lambda x : Point(x.longitude, x.latitude), axis=1)
     stations = gpd.GeoDataFrame(stations)
     stations = stations.set_crs('epsg:4326')
-    stations = stations.to_crs('epsg:27393')
+    stations = stations.to_crs(city_crs)
     return stations
 
 
