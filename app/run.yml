@@ -1,0 +1,14 @@
+collect_area:
+  name: Oslo, Norway
+  filename: data/Oslo/oslo_area.geoparquet
+
+grid:
+  resolution: 8
+  filename: data/Oslo/oslo_grid.geoparquet
+
+POIs:
+  crs: 32632
+  folder: data/Oslo/POIs/
+
+population:
+  
