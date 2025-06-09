@@ -44,5 +44,6 @@ features = {
     cell_index: get_features(cell_index)
     for cell_index in hex_grid.index
 }
+
 pd.DataFrame(features).T.to_parquet("data/Oslo/cell_features.parquet")
 
