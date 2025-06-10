@@ -13,6 +13,7 @@ def obtain_url(y, m, provider):
         m=f"0{m}"
     return f"https://data.urbansharing.com/{provider}/trips/v1/{y}/{m}.json"
 
+
 def urls(years, months, provider):
     for y in years:
         for m in months:
@@ -20,6 +21,7 @@ def urls(years, months, provider):
                 pass
             else:
                 yield obtain_url(y, m, provider)
+
 
 def retrieve_dataset(url):
     try:
@@ -38,6 +40,7 @@ def retrieve_dataset(url):
         
     return df
 
+
 def collect_data(years, months, provider = 'oslobysykkel.no'):
     
     global_df = pd.DataFrame()
@@ -48,6 +51,7 @@ def collect_data(years, months, provider = 'oslobysykkel.no'):
         global_df = pd.concat([global_df, df])
     
     return global_df
+
 
 def get_processed_trips(trips, station_distances):
 
@@ -111,9 +115,11 @@ def get_trips_per_station(trips, stations):
     
     return trips_per_station
 
+
 def get_stations_GPS(trips_per_station):
         return trips_per_station.geometry.apply(lambda x : [x.x, x.y]).to_list()
     
+
 def filter_f(f, top_trips, threshold_function, q_thresh):
     if top_trips:
         f = f.sort_values(by='trips', ascending=False).head(top_trips)
@@ -126,6 +132,7 @@ def filter_f(f, top_trips, threshold_function, q_thresh):
             threshold = 0
         f = f[f.trips > threshold]
     return f
+
 
 def get_matrix(data, clusters, sample_size=None):
     
@@ -155,6 +162,7 @@ def get_matrix(data, clusters, sample_size=None):
 def get_T(matrix):
     return tl.tensor(data = [tl.tensor(matrix.loc[h]).astype('float64') for h in range(24)])
 
+
 def bootstrap_T(matrix, 
                 frac, 
                 data,
@@ -162,6 +170,7 @@ def bootstrap_T(matrix,
                ):
     matrix_sample = get_matrix(data, clusters, int(frac*len(data)))
     return get_T(matrix_sample)
+
 
 def get_factorization(use):
     if use == 'tucker':

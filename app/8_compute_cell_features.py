@@ -3,6 +3,8 @@ import pandas as pd
 from yaml import safe_load
 import matplotlib.pyplot as plt
 
+city='Oslo'
+
 config_path = "app/run.yml"
 with open(config_path) as file:
     config = safe_load(file)
@@ -33,10 +35,10 @@ def get_features(cell_index, nth_neighbours='first_neighbours'):
     features |= water[water.intersects(cell)].groupby('water')['area'].sum().to_dict()
     features |= cycleways[cycleways.intersects(cell)].groupby('highway')['real_length'].sum().to_dict()
 
-    features['n_cell_bus_stations'] = len(bus_stations[bus_stations.intersects(cell)])
-    features['n_cell_railway_stations'] = len(railway_stations[railway_stations.intersects(cell)])
-    features['n_cell_subway_stations'] = len(subway_stations[subway_stations.intersects(cell)])
-    features['n_cell_other_stations'] = len(other_stations[other_stations.intersects(cell)])
+    features['bus_stations'] = len(bus_stations[bus_stations.intersects(cell)])
+    features['railway_stations'] = len(railway_stations[railway_stations.intersects(cell)])
+    features['subway_stations'] = len(subway_stations[subway_stations.intersects(cell)])
+    features['other_stations'] = len(other_stations[other_stations.intersects(cell)])
     features['population'] = population.loc[cell_index, 'population']
     return features
 
@@ -44,6 +46,12 @@ features = {
     cell_index: get_features(cell_index)
     for cell_index in hex_grid.index
 }
+features = pd.DataFrame(features).T
+breakpoint()
 
-pd.DataFrame(features).T.to_parquet("data/Oslo/cell_features.parquet")
+features.to_parquet(f"data/{city}/cell_features.parquet")
 
+potentials = pd.read_pickle(f"data/{city}/trips/potentials.pkl")
+full_cell_features = potentials.join(features, on='cell_id')
+full_cell_features = full_cell_features.set_index("cell_id", append=True)
+full_cell_features.to_pickle(f"data/{city}/potentials_and_features.pkl")

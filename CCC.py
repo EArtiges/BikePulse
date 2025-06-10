@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.cluster.hierarchy import linkage, cophenet
 from scipy.spatial.distance import squareform
-from oslo_lib import bootstrap_T
+from app.oslo_lib import bootstrap_T
 
 def get_consensus_matrix(n_components, 
                          factorization, 
