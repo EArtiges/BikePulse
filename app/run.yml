@@ -1,14 +1,53 @@
-collect_area:
-  name: Oslo, Norway
-  filename: data/Oslo/oslo_area.geoparquet
+Oslo:
+  collect_area:
+    name: Oslo, Norway
+    filename: data/Oslo/oslo_area.geoparquet
 
-grid:
-  resolution: 8
-  filename: data/Oslo/oslo_grid.geoparquet
+  grid:
+    resolution: 8
+    full_grid_filename: data/Oslo/full_hex_grid.geoparquet
+    clipped_grid_filename: data/Oslo/hex_grid.geoparquet
 
-POIs:
-  crs: 32632
-  folder: data/Oslo/POIs/
+  POIs:
+    crs: 32632
+    folder: data/Oslo/POIs/
 
-population:
-  
+  population:
+    input: data/global/GHS_POP/R3_C19.csv
+    output: data/global/GHS_POP/R3_C19.gpkg
+
+Milan:  
+  collect_area:
+    name: Milan, Italy
+    filename: data/Milan/trips/stations.geoparquet
+
+  grid:
+    resolution: 8
+    full_grid_filename: data/Milan/trips/full_hex_grid.geoparquet
+    clipped_grid_filename: data/Milan/hex_grid.geoparquet
+
+  POIs:
+    crs: 6875
+    folder: data/MIlan/POIs/
+
+  population:
+    input: data/global/GHS_POP/R4_C19.csv
+    output: data/global/GHS_POP/R4_C19.gpkg
+
+Edinburgh:  
+  collect_area:
+    name: Edinburgh, Scotland
+    filename: data/Edinburgh/edinburgh_area.geoparquet
+
+  grid:
+    resolution: 8
+    full_grid_filename: data/Edinburgh/full_hex_grid.geoparquet
+    clipped_grid_filename: data/Edinburgh/hex_grid.geoparquet
+
+  POIs:
+    crs: 5653
+    folder: data/Edinburgh/POIs/
+
+  population:
+    input: data/global/GHS_POP/R3_C18.csv
+    output: data/global/GHS_POP/R3_C18.gpkg

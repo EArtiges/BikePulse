@@ -8,19 +8,12 @@ def get_consensus_matrix(n_components,
                          T, 
                          nruns=100, 
                          init='svd', 
-                         bootstrap=False, 
-                         frac=.8, 
-                         data=None, 
-                         clusters=None, 
                          use_W=True):
     
     As = []
     
     for run in range(nruns):
-        if bootstrap:
-            T_ = bootstrap_T(T, frac, data, clusters)
-        else:
-            T_ = T
+        T_ = T
         temporal_factors, W, H = factorization(T_, rank=n_components, init=init).factors
         if use_W:
             As.append(get_adjacency_matrix(W))
@@ -76,20 +69,12 @@ def compute_rho(n_components,
                 T, 
                 nruns=100, 
                 init='svd', 
-                bootstrap=False, 
-                frac=.8, 
-                data=None, 
-                clusters=None, 
                 use_W=True):
     C = get_consensus_matrix(n_components, 
                              factorization, 
                              T, 
                              nruns, 
                              init=init, 
-                             bootstrap=bootstrap, 
-                             frac=frac, 
-                             data=data, 
-                             clusters=clusters, 
                              use_W=use_W)
     L = linkage(C, 'average')
     coph_distances = squareform(cophenet(L)) 

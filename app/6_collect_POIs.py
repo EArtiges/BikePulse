@@ -1,12 +1,11 @@
 import geopandas as gpd
-from yaml import safe_load
+from utils import get_config
 from geo_utils import get_city_bbox
 import osmnx as ox
 import numpy as np
 
-config_path = "app/run.yml"
-with open(config_path) as file:
-    config = safe_load(file)
+city = "Edinburgh"
+config = get_config(city)
 
 full_city_name = config['collect_area']['name']
 city_crs = f"epsg:{config['POIs']['crs']}"

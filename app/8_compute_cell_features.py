@@ -1,13 +1,10 @@
 import geopandas as gpd
 import pandas as pd
-from yaml import safe_load
+from utils import get_config
 import matplotlib.pyplot as plt
 
-city='Oslo'
-
-config_path = "app/run.yml"
-with open(config_path) as file:
-    config = safe_load(file)
+city='Edinburgh'
+config = get_config(city)
 
 folder = config['POIs']['folder']
 city_crs = f"epsg:{config['POIs']['crs']}"
@@ -19,8 +16,8 @@ bus_stations = gpd.read_parquet(folder+'bus_stations.geoparquet')
 railway_stations = gpd.read_parquet(folder+'railway_stations.geoparquet')
 subway_stations = gpd.read_parquet(folder+'subway_stations.geoparquet')
 other_stations = gpd.read_parquet(folder+'other_stations.geoparquet')
-population = pd.read_csv("data/Oslo/oslo_pop.csv").set_index('h3_polyfill')
-hex_grid = gpd.read_parquet("data/Oslo/oslo_grid.geoparquet")
+population = pd.read_csv(f"data/{city}/population.csv").set_index('h3_polyfill')
+hex_grid = gpd.read_parquet(f"data/{city}/hex_grid.geoparquet")
 
 cycleways['real_length'] = cycleways.geometry.to_crs(city_crs).length
 cycleways = cycleways.explode('osmid').explode('highway')
@@ -47,8 +44,6 @@ features = {
     for cell_index in hex_grid.index
 }
 features = pd.DataFrame(features).T
-breakpoint()
-
 features.to_parquet(f"data/{city}/cell_features.parquet")
 
 potentials = pd.read_pickle(f"data/{city}/trips/potentials.pkl")
