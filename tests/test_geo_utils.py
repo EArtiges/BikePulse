@@ -31,34 +31,43 @@ class TestGeoBoundaries:
 
     def test_get_spread(self):
         """Test get_spread returns range."""
-        arr = np.array([10, 20, 30, 40, 50])
-        spread = get_spread(arr)
+        boundaries = (10, 50)
+        spread = get_spread(boundaries)
         assert spread == 40  # 50 - 10
 
     def test_get_window_default_buffer(self):
         """Test get_window with default 5% buffer."""
-        arr = np.array([0, 100])
-        window = get_window(arr)
-        # With 5% buffer: -5 to 105
-        assert window[0] == pytest.approx(-5.0)
-        assert window[1] == pytest.approx(105.0)
+        center = 50
+        spread = 100
+        buffer = 0.05
+        window = get_window(center, spread, buffer)
+        # With 5% buffer: center=50, spread=100, buffer=0.05*100/2=2.5
+        # window = (50 - 100/2 - 2.5, 50 + 100/2 + 2.5) = (-2.5, 102.5)
+        assert window[0] == pytest.approx(-2.5)
+        assert window[1] == pytest.approx(102.5)
 
     def test_get_window_custom_buffer(self):
         """Test get_window with custom buffer."""
-        arr = np.array([0, 100])
-        window = get_window(arr, buffer_percent=0.10)
-        # With 10% buffer: -10 to 110
-        assert window[0] == pytest.approx(-10.0)
-        assert window[1] == pytest.approx(110.0)
+        center = 50
+        spread = 100
+        buffer = 0.10
+        window = get_window(center, spread, buffer)
+        # With 10% buffer: center=50, spread=100, buffer=0.10*100/2=5
+        # window = (50 - 100/2 - 5, 50 + 100/2 + 5) = (-5, 105)
+        assert window[0] == pytest.approx(-5.0)
+        assert window[1] == pytest.approx(105.0)
 
     def test_window_filter(self):
-        """Test window_filter filters DataFrame correctly."""
+        """Test window_filter filters Series correctly."""
         import pandas as pd
 
-        df = pd.DataFrame({"value": [1, 5, 10, 15, 20, 25, 30]})
+        series = pd.Series([1, 5, 10, 15, 20, 25, 30])
         window = (10, 20)
-        filtered = window_filter(df, "value", window)
+        mask = window_filter(series, window)
 
-        assert len(filtered) == 3  # 10, 15, 20
-        assert filtered["value"].min() == 10
-        assert filtered["value"].max() == 20
+        # mask should be a boolean array
+        assert isinstance(mask, pd.Series)
+        assert mask.sum() == 3  # 10, 15, 20 should pass filter
+        filtered_values = series[mask]
+        assert filtered_values.min() == 10
+        assert filtered_values.max() == 20
