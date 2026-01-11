@@ -1,0 +1,35 @@
+# Development dependencies for BikePulse
+# Install with: pip install -r requirements-dev.txt
+
+# First install production requirements
+-r requirements.txt
+
+# Code formatting
+black==24.1.1
+isort==5.13.2
+
+# Linting
+ruff==0.2.1
+
+# Testing
+pytest==8.0.0
+pytest-cov==4.1.0
+pytest-xdist==3.5.0  # Parallel test execution
+
+# Pre-commit hooks
+pre-commit==3.6.0
+nbstripout==0.7.1
+
+# Security scanning
+safety==3.0.1
+
+# Type checking (optional)
+mypy==1.8.0
+
+# Jupyter notebook tools
+nbconvert==7.16.0
+nbformat==5.9.2
+
+# Documentation (optional)
+sphinx==7.2.6
+sphinx-rtd-theme==2.0.0

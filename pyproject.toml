@@ -1,0 +1,107 @@
+# BikePulse Project Configuration
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bikepulse"
+version = "0.1.0"
+description = "Urban bike-sharing network analysis pipeline"
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["urban-mobility", "bike-sharing", "geospatial", "data-science"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39', 'py310', 'py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | \.eggs
+  | __pycache__
+  | cache
+  | data
+  | old_notebooks
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+skip = [".venv", "cache", "data", "old_notebooks"]
+known_first_party = ["oslo_lib", "geo_utils", "CCC", "utils"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "cache",
+    "data",
+    "old_notebooks",
+]
+
+[tool.ruff.lint]
+# Enable common checks
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",  # line too long (black handles this)
+    "B008",  # do not perform function calls in argument defaults
+    "B904",  # Within an except clause, raise exceptions with `raise ... from err`
+    "N803",  # Argument name should be lowercase (for mathematical notation)
+    "N806",  # Variable in function should be lowercase (for mathematical notation like T for tensors)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+"notebooks/*.py" = ["E402"]  # Allow module level import not at top of file
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["notebooks"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/old_notebooks/*",
+    ".venv/*",
+]
+
+[tool.coverage.report]
+precision = 2
+skip_empty = true
+show_missing = true

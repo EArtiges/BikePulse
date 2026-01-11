@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black ruff isort
+
+      - name: Run black
+        run: black --check --diff notebooks/ *.py
+
+      - name: Run ruff
+        run: ruff check notebooks/ *.py
+
+      - name: Run isort
+        run: isort --check-only --diff notebooks/ *.py
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdal-bin libgdal-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run tests
+        run: |
+          pytest --cov=notebooks --cov-report=xml --cov-report=term
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: github.event_name == 'pull_request'
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          fail_ci_if_error: false
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install safety
+        run: pip install safety
+
+      - name: Run safety check
+        run: safety check --file requirements.txt --continue-on-error || true
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+  notebook-quality:
+    name: Notebook Quality Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for notebook outputs
+        run: |
+          if find . -name "*.ipynb" -not -path "./old_notebooks/*" -exec grep -q '"outputs": \[' {} \; 2>/dev/null; then
+            echo "Error: Found notebooks with outputs. Please clear outputs before committing."
+            echo "Run: jupyter nbconvert --clear-output --inplace *.ipynb"
+            exit 1
+          else
+            echo "All notebooks have cleared outputs ✓"
+          fi
+
+      - name: Check for hardcoded paths
+        run: |
+          if grep -r "/home/" --include="*.ipynb" --exclude-dir="old_notebooks" . 2>/dev/null; then
+            echo "Warning: Found hardcoded absolute paths in notebooks"
+            exit 1
+          else
+            echo "No hardcoded paths found ✓"
+          fi

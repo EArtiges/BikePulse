@@ -12,13 +12,14 @@
 2. [Codebase Structure](#codebase-structure)
 3. [Technology Stack](#technology-stack)
 4. [Development Setup](#development-setup)
-5. [Data Pipeline Workflow](#data-pipeline-workflow)
-6. [Configuration Management](#configuration-management)
-7. [Code Conventions](#code-conventions)
-8. [Key Modules Reference](#key-modules-reference)
-9. [Common Tasks](#common-tasks)
-10. [Known Issues & Gotchas](#known-issues--gotchas)
-11. [AI Assistant Guidelines](#ai-assistant-guidelines)
+5. [CI/CD & Code Quality](#cicd--code-quality)
+6. [Data Pipeline Workflow](#data-pipeline-workflow)
+7. [Configuration Management](#configuration-management)
+8. [Code Conventions](#code-conventions)
+9. [Key Modules Reference](#key-modules-reference)
+10. [Common Tasks](#common-tasks)
+11. [Known Issues & Gotchas](#known-issues--gotchas)
+12. [AI Assistant Guidelines](#ai-assistant-guidelines)
 
 ---
 
@@ -207,6 +208,260 @@ City configurations are defined in `notebooks/run.yml`. Each city requires:
 cd notebooks
 python -c "import geopandas, osmnx, h3, tensorly; print('All imports successful')"
 ```
+
+---
+
+## CI/CD & Code Quality
+
+The project uses automated code quality checks and continuous integration to maintain high standards.
+
+### Pre-commit Hooks
+
+**Setup:**
+
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Install pre-commit hooks
+pre-commit install
+```
+
+**Hooks configured:**
+- **black**: Automatic code formatting (100 char line length)
+- **ruff**: Fast Python linting (replaces flake8)
+- **isort**: Import statement sorting
+- **trailing-whitespace**: Remove trailing whitespace
+- **end-of-file-fixer**: Ensure files end with newline
+- **check-yaml**: Validate YAML syntax
+- **check-added-large-files**: Prevent files >5MB
+- **nbstripout**: Clear Jupyter notebook outputs
+
+**Running manually:**
+
+```bash
+# Run on all files
+pre-commit run --all-files
+
+# Run on staged files only
+pre-commit run
+
+# Update hook versions
+pre-commit autoupdate
+```
+
+### Code Quality Tools
+
+All tools are configured in `pyproject.toml`:
+
+#### Black (Code Formatting)
+```bash
+# Format all Python files
+black notebooks/ *.py
+
+# Check without modifying
+black --check notebooks/
+```
+
+#### Ruff (Linting)
+```bash
+# Lint and auto-fix
+ruff check --fix notebooks/ *.py
+
+# Check only
+ruff check notebooks/
+```
+
+#### isort (Import Sorting)
+```bash
+# Sort imports
+isort notebooks/ *.py
+
+# Check only
+isort --check-only notebooks/
+```
+
+**Configuration highlights:**
+- Line length: 100 characters
+- Python target: 3.9+
+- Excludes: `.venv/`, `cache/`, `data/`, `old_notebooks/`
+- Mathematical notation exceptions: Allows uppercase variables (T for tensors, N for counts)
+
+### Testing
+
+**Run tests:**
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=notebooks --cov-report=term
+
+# Run specific test file
+pytest tests/test_utils.py
+
+# Run tests in parallel
+pytest -n auto
+```
+
+**Test structure:**
+```
+tests/
+├── __init__.py
+├── conftest.py           # Pytest configuration and fixtures
+├── test_utils.py         # Configuration and utility tests
+└── test_geo_utils.py     # Geospatial utility tests
+```
+
+**Test categories:**
+- `@pytest.mark.unit`: Fast unit tests
+- `@pytest.mark.integration`: Integration tests (slower)
+- `@pytest.mark.slow`: Long-running tests
+
+**Run specific categories:**
+```bash
+pytest -m unit              # Only unit tests
+pytest -m "not slow"        # Skip slow tests
+```
+
+### GitHub Actions CI
+
+**Workflows:** `.github/workflows/ci.yml`
+
+**Triggered on:**
+- Pull requests to `main` or `develop`
+- Pushes to `main` or `develop`
+
+**Jobs:**
+
+1. **lint** - Code Quality & Linting
+   - Runs black, ruff, isort
+   - Fast feedback on code style
+
+2. **test** - Run Tests
+   - Installs GDAL system dependencies
+   - Runs pytest with coverage
+   - Uploads coverage to Codecov
+
+3. **security** - Security Scan
+   - Runs `safety` to check for vulnerable dependencies
+   - Uses TruffleHog to detect secrets in commits
+
+4. **notebook-quality** - Notebook Quality Check
+   - Ensures notebooks have outputs cleared
+   - Checks for hardcoded absolute paths
+
+**Status badges:** Add to README.md:
+```markdown
+![CI](https://github.com/EArtiges/BikePulse/workflows/CI/badge.svg)
+```
+
+### Dependabot
+
+**Configuration:** `.github/dependabot.yml`
+
+**Features:**
+- Weekly dependency updates (Mondays at 9 AM)
+- Groups updates by category:
+  - Geospatial: geopandas, shapely, osmnx, h3, rasterio, GDAL
+  - Data science: pandas, numpy, scipy, scikit-learn, tensorly
+  - Jupyter: jupyter, ipython, ipykernel
+- Automatic GitHub Actions updates
+- Labels PRs with `dependencies` tag
+
+**Managing Dependabot PRs:**
+- Review grouped updates as a batch
+- Test critical updates (GDAL, geopandas) carefully
+- Major version updates require manual review
+
+### Security Scanning
+
+**safety check:**
+```bash
+# Check for known vulnerabilities
+safety check --file requirements.txt
+
+# Generate detailed report
+safety check --file requirements.txt --output json
+```
+
+**Common issues:**
+- GDAL vulnerabilities: Often system-level, requires OS updates
+- Numpy/Pillow: Update if CVE severity is high
+
+### Development Workflow
+
+**Before committing:**
+
+1. Pre-commit hooks run automatically
+2. If hooks fail, fix issues and re-stage:
+   ```bash
+   git add -u
+   git commit
+   ```
+
+**Before pushing:**
+
+1. Run tests locally:
+   ```bash
+   pytest
+   ```
+
+2. Ensure notebooks have cleared outputs:
+   ```bash
+   jupyter nbconvert --clear-output --inplace *.ipynb
+   ```
+
+**On pull request:**
+
+1. GitHub Actions runs all checks
+2. Review CI results before merging
+3. Address any failing checks
+
+### Common CI Issues
+
+#### GDAL Installation Failures
+
+**Problem:** CI fails to install GDAL dependencies
+
+**Solution:** Update `.github/workflows/ci.yml` GDAL installation:
+```yaml
+- name: Install system dependencies
+  run: |
+    sudo apt-get update
+    sudo apt-get install -y gdal-bin libgdal-dev
+    export GDAL_CONFIG=/usr/bin/gdal-config
+```
+
+#### Notebook Output Errors
+
+**Problem:** Notebooks committed with outputs
+
+**Solution:**
+```bash
+# Clear all notebook outputs
+find . -name "*.ipynb" ! -path "./old_notebooks/*" -exec jupyter nbconvert --clear-output --inplace {} \;
+
+# Commit the changes
+git add *.ipynb
+git commit --amend --no-edit
+```
+
+#### Import Errors in Tests
+
+**Problem:** Tests can't import modules from `notebooks/`
+
+**Solution:** Already configured in `conftest.py`:
+```python
+sys.path.insert(0, str(Path(__file__).parent.parent / "notebooks"))
+```
+
+#### Ruff Linting Errors
+
+**Problem:** Mathematical notation flagged (N806: variable should be lowercase)
+
+**Solution:** Already configured in `pyproject.toml` to allow uppercase mathematical variables
 
 ---
 
