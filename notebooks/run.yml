@@ -16,7 +16,31 @@ Oslo:
     input: data/global/GHS_POP/R3_C19.csv
     output: data/global/GHS_POP/R3_C19.gpkg
 
-Milan:  
+  analysis:
+    clustering:
+      algorithm: kmeans
+      n_clusters: 5
+      cluster_range: [2, 20]
+      n_iterations: 50
+      normalization: l1
+      random_seed: 42
+
+    factorization:
+      method: tucker
+      rank: [3, 5, 5]
+      weekdays_only: true
+      month_range: [1, 12]
+      n_bootstraps: 100
+      consensus_threshold: 0.5
+      random_seed: 42
+
+    output:
+      results_dir: results/{city}
+      save_plots: true
+      plot_format: png
+      plot_dpi: 300
+
+Milan:
   collect_area:
     name: Milan, Italy
     filename: data/Milan/trips/stations.geoparquet
@@ -34,7 +58,31 @@ Milan:
     input: data/global/GHS_POP/R4_C19.csv
     output: data/global/GHS_POP/R4_C19.gpkg
 
-Edinburgh:  
+  analysis:
+    clustering:
+      algorithm: kmeans
+      n_clusters: 5
+      cluster_range: [2, 20]
+      n_iterations: 50
+      normalization: l1
+      random_seed: 42
+
+    factorization:
+      method: tucker
+      rank: [3, 5, 5]
+      weekdays_only: true
+      month_range: [1, 12]
+      n_bootstraps: 100
+      consensus_threshold: 0.5
+      random_seed: 42
+
+    output:
+      results_dir: results/{city}
+      save_plots: true
+      plot_format: png
+      plot_dpi: 300
+
+Edinburgh:
   collect_area:
     name: Edinburgh, Scotland
     filename: data/Edinburgh/edinburgh_area.geoparquet
@@ -51,3 +99,27 @@ Edinburgh:
   population:
     input: data/global/GHS_POP/R3_C18.csv
     output: data/global/GHS_POP/R3_C18.gpkg
+
+  analysis:
+    clustering:
+      algorithm: kmeans
+      n_clusters: 5
+      cluster_range: [2, 20]
+      n_iterations: 50
+      normalization: l1
+      random_seed: 42
+
+    factorization:
+      method: tucker
+      rank: [3, 5, 5]
+      weekdays_only: true
+      month_range: [1, 12]
+      n_bootstraps: 100
+      consensus_threshold: 0.5
+      random_seed: 42
+
+    output:
+      results_dir: results/{city}
+      save_plots: true
+      plot_format: png
+      plot_dpi: 300

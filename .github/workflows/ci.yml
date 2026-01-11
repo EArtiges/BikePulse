@@ -27,13 +27,13 @@ jobs:
           pip install black ruff isort
 
       - name: Run black
-        run: black --check --diff notebooks/
+        run: black --check --diff notebooks/ analysis/
 
       - name: Run ruff
-        run: ruff check notebooks/
+        run: ruff check notebooks/ analysis/
 
       - name: Run isort
-        run: isort --check-only --diff notebooks/
+        run: isort --check-only --diff notebooks/ analysis/
 
   pipeline-validation:
     name: Pipeline Validation (Smoke Tests)
@@ -122,7 +122,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pytest tests/test_utils.py tests/test_geo_utils.py --cov=notebooks --cov-report=xml --cov-report=term
+          pytest tests/test_utils.py tests/test_geo_utils.py tests/test_clustering.py tests/test_factorization.py --cov=notebooks --cov=analysis --cov-report=xml --cov-report=term
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
