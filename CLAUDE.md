@@ -423,15 +423,36 @@ safety check --file requirements.txt --output json
 
 #### GDAL Installation Failures
 
-**Problem:** CI fails to install GDAL dependencies
+**Problem:** GDAL Python package version must match system GDAL library version
 
-**Solution:** Update `.github/workflows/ci.yml` GDAL installation:
+**Error Message:**
+```
+Exception: Python bindings of GDAL 3.11.0 require at least libgdal 3.11.0, but 3.8.4 was found
+```
+
+**Root Cause:** The Python GDAL package (specified in `requirements.txt`) must match the system GDAL library version. Ubuntu's apt repositories often have older versions than the latest Python package.
+
+**Solution:** The CI workflow automatically installs the matching GDAL version:
 ```yaml
 - name: Install system dependencies
   run: |
     sudo apt-get update
     sudo apt-get install -y gdal-bin libgdal-dev
-    export GDAL_CONFIG=/usr/bin/gdal-config
+
+- name: Install Python dependencies
+  run: |
+    python -m pip install --upgrade pip
+    # Install GDAL Python bindings matching system version
+    pip install GDAL==$(gdal-config --version)
+    # Install other dependencies (excluding GDAL)
+    grep -v "^GDAL==" requirements.txt > /tmp/requirements-no-gdal.txt
+    pip install -r /tmp/requirements-no-gdal.txt
+```
+
+**For Local Development:** Check your system GDAL version and install matching Python package:
+```bash
+gdal-config --version  # Check system version (e.g., 3.8.4)
+pip install GDAL==3.8.4  # Install matching version
 ```
 
 #### Notebook Output Errors

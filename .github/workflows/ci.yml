@@ -57,7 +57,11 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          # Install GDAL Python bindings matching system version
+          pip install GDAL==$(gdal-config --version)
+          # Install other dependencies (excluding GDAL from requirements.txt)
+          grep -v "^GDAL==" requirements.txt > /tmp/requirements-no-gdal.txt
+          pip install -r /tmp/requirements-no-gdal.txt
           pip install pytest pytest-cov
 
       - name: Run tests
