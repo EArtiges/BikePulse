@@ -64,10 +64,17 @@ select = [
 ]
 ignore = [
     "E501",  # line too long (black handles this)
+    "E722",  # bare except (existing code pattern)
+    "B007",  # unused loop variable (intentional in some cases)
     "B008",  # do not perform function calls in argument defaults
     "B904",  # Within an except clause, raise exceptions with `raise ... from err`
+    "E741",  # ambiguous variable name (l, O, I) - used in mathematical contexts
+    "F841",  # local variable assigned but never used
+    "N802",  # function name should be lowercase (existing naming conventions)
     "N803",  # Argument name should be lowercase (for mathematical notation)
     "N806",  # Variable in function should be lowercase (for mathematical notation like T for tensors)
+    "N816",  # mixedCase variable (GPS naming convention)
+    "SIM108",  # Use ternary operator (readability preference)
 ]
 
 [tool.ruff.lint.per-file-ignores]

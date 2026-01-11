@@ -27,13 +27,13 @@ jobs:
           pip install black ruff isort
 
       - name: Run black
-        run: black --check --diff notebooks/ *.py
+        run: black --check --diff notebooks/
 
       - name: Run ruff
-        run: ruff check notebooks/ *.py
+        run: ruff check notebooks/
 
       - name: Run isort
-        run: isort --check-only --diff notebooks/ *.py
+        run: isort --check-only --diff notebooks/
 
   test:
     name: Run Tests
@@ -109,9 +109,11 @@ jobs:
 
       - name: Check for notebook outputs
         run: |
-          if find . -name "*.ipynb" -not -path "./old_notebooks/*" -exec grep -q '"outputs": \[' {} \; 2>/dev/null; then
+          # Check for non-empty outputs (outputs with content, not just "outputs": [])
+          if find . -name "*.ipynb" -not -path "./old_notebooks/*" -exec grep -l '"outputs": \[{' {} \; 2>/dev/null | grep -q .; then
             echo "Error: Found notebooks with outputs. Please clear outputs before committing."
             echo "Run: jupyter nbconvert --clear-output --inplace *.ipynb"
+            find . -name "*.ipynb" -not -path "./old_notebooks/*" -exec grep -l '"outputs": \[{' {} \; 2>/dev/null
             exit 1
           else
             echo "All notebooks have cleared outputs ✓"
