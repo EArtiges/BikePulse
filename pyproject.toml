@@ -55,7 +55,7 @@ select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
     "F",   # pyflakes
-    "I",   # isort
+    # "I",   # isort - disabled, using isort directly to avoid conflicts
     "N",   # pep8-naming
     "UP",  # pyupgrade
     "B",   # flake8-bugbear
