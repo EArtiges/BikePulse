@@ -60,21 +60,31 @@ BikePulse/
 │   ├── 6_collect_POIs.py              # Collect Points of Interest (OSM)
 │   ├── 7_compute_OD_matrix.py         # Compute origin-destination trip matrix
 │   ├── 8_compute_cell_features.py     # Engineer features for cells
+│   ├── 9_classify_cells.py            # Cell clustering and classification
+│   ├── 10_factorize_tensor.py         # Tensor factorization analysis
 │   ├── oslo_lib.py                    # Core data processing library (182 lines)
 │   ├── geo_utils.py                   # Geospatial utility functions (44 lines)
 │   ├── CCC.py                         # Consensus Clustering Coefficient (81 lines)
 │   ├── utils.py                       # Configuration loader (7 lines)
 │   └── run.yml                        # City-specific configurations
 │
-├── cell_classifier.ipynb              # ML model for cell classification
-├── factors.ipynb                      # Tensor factorization analysis (main notebook)
+├── analysis/                          # Analysis modules
+│   ├── clustering/                    # Cell clustering
+│   │   ├── classifiers.py             # Clustering algorithms
+│   │   └── visualization.py           # Clustering visualizations
+│   └── factorization/                 # Tensor factorization
+│       ├── decomposition.py           # Tucker/PARAFAC decomposition
+│       ├── evaluation.py              # RMSE and CCC metrics
+│       └── visualization.py           # Factor visualizations
 │
 ├── old_notebooks/                     # Legacy Jupyter notebooks (for reference)
 │   ├── 1_Collect.ipynb
 │   ├── 2_Explore.ipynb
 │   ├── 3_Landmarks.ipynb
 │   ├── 4_Connect.ipynb
-│   └── 5_Model.ipynb
+│   ├── 5_Model.ipynb
+│   ├── cell_classifier.ipynb          # Migrated to 9_classify_cells.py
+│   └── factors.ipynb                  # Migrated to 10_factorize_tensor.py
 │
 ├── data/                              # Data storage (gitignored)
 │   ├── {city}/                        # City-specific data directories
@@ -84,19 +94,41 @@ BikePulse/
 │   └── global/                        # Global datasets (population)
 │       └── GHS_POP/                   # Population rasters
 │
-├── cache/                             # Cached results (gitignored, 17 JSON files)
+├── results/                           # Analysis outputs (gitignored)
+│   └── {city}/
+│       ├── clustering/                # Clustering results
+│       │   ├── plots/                 # Visualizations
+│       │   ├── metrics.json           # Quality metrics
+│       │   └── labels.parquet         # Cluster assignments
+│       └── factorization/             # Factorization results
+│           ├── plots/                 # Factor visualizations
+│           ├── factors/               # Saved factors
+│           └── metrics.json           # Reconstruction metrics
+│
+├── tests/                             # Test suite
+│   ├── test_clustering.py             # Clustering tests
+│   └── test_factorization.py          # Factorization tests
+│
+├── cache/                             # Cached results (gitignored)
 ├── .venv/                             # Python virtual environment (gitignored)
 ├── requirements.txt                   # Python dependencies (84 packages)
 ├── README.md                          # High-level project plan
-├── .gitignore                         # Excludes: .venv/, cache/, data/
+├── .gitignore                         # Excludes: .venv/, cache/, data/, results/
 └── CLAUDE.md                          # This file
 ```
 
-### Recent Restructuring (Dec 2025)
+### Recent Restructuring
 
-The project recently underwent a major refactoring:
+#### January 2026: Complete Notebook-to-Script Migration
+- **Migrated:** `cell_classifier.ipynb` → `9_classify_cells.py`
+- **Migrated:** `factors.ipynb` → `10_factorize_tensor.py`
+- **Created:** Modular `analysis/` package with clustering and factorization modules
+- **Added:** Comprehensive test suite for analysis modules
+- **Result:** Entire pipeline is now script-based with clean separation of concerns
+
+#### December 2025: Initial Pipeline Migration
 - **Before:** Jupyter notebook-based workflow in `app/` directory
-- **After:** Script-based pipeline in `notebooks/` directory
+- **After:** Script-based pipeline in `notebooks/` directory (steps 1-8)
 - **Rationale:** Improved reproducibility and version control
 - **Legacy Code:** Retained in `old_notebooks/` for reference
 
@@ -510,7 +542,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "notebooks"))
 
 ### Pipeline Execution Order
 
-The pipeline must be executed **sequentially** from 1a to 8. Some steps (4, 5, 6) can run in parallel.
+The pipeline must be executed **sequentially** from 1a to 10. Some steps (4, 5, 6) can run in parallel.
 
 ```
 1a_collect_bike_trips.py
@@ -532,10 +564,10 @@ _population   _population _POIs
     ↓
 8_compute_cell_features.py
     ↓
-┌─────────────────┬──────────────┐
-│                 │              │
-cell_classifier   factors
-.ipynb            .ipynb
+┌─────────────────┬──────────────────┐
+│                 │                  │
+9_classify_cells  10_factorize_tensor
+.py               .py
 ```
 
 ### Pipeline Stages
@@ -609,18 +641,37 @@ cell_classifier   factors
   - Distance-weighted aggregates
 - **Output:** `data/{city}/cell_features.parquet`
 
-#### Stage 5: Modeling & Analysis
+#### Stage 5: Analysis
 
-**Cell Classifier** (`cell_classifier.ipynb`)
-- Supervised/unsupervised classification of cells
-- Uses engineered features
-- Identifies urban typologies
+**9. Cell Classification** (`9_classify_cells.py`)
+- **Input:** `data/{city}/cell_features.parquet`, `data/{city}/hex_grid.geoparquet`
+- **Process:**
+  - Evaluates clustering stability across different k values (2-20)
+  - Computes silhouette and Calinski-Harabasz scores
+  - Performs final clustering with configured k (default: 5)
+  - Generates spatial visualizations of clusters and features
+- **Output:** `results/{city}/clustering/`
+  - `labels.parquet` - Cluster assignments for each cell
+  - `centroids.parquet` - Cluster centroids (feature importance)
+  - `metrics.json` - Quality metrics
+  - `plots/` - Cluster maps and feature distributions
+- **Configuration:** `run.yml` → `analysis.clustering`
 
-**Tensor Factorization** (`factors.ipynb`)
-- Non-negative Tucker/PARAFAC decomposition
-- 3D tensor: (hour × source_cell × dest_cell)
-- Discovers latent mobility patterns
-- Consensus clustering for validation (CCC.py)
+**10. Tensor Factorization** (`10_factorize_tensor.py`)
+- **Input:** `data/{city}/cell_OD.pkl`, `data/{city}/hex_grid.geoparquet`
+- **Process:**
+  - Prepares OD tensor (hour × start_cell × end_cell)
+  - Filters by weekday/weekend and month range
+  - Applies Tucker or PARAFAC decomposition
+  - Evaluates reconstruction quality (RMSE, R²)
+  - Extracts temporal and spatial factors
+  - Visualizes mobility patterns
+- **Output:** `results/{city}/factorization/`
+  - `factors/factorization_result.pkl` - Full factorization results
+  - `factors/spatial_factors.parquet` - Spatial factors by component
+  - `metrics.json` - Reconstruction metrics
+  - `plots/` - Temporal patterns, spatial flows, quality diagnostics
+- **Configuration:** `run.yml` → `analysis.factorization`
 
 ---
 

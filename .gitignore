@@ -12,6 +12,8 @@ build/
 # Project specific
 cache/
 data/
+results/
+!results/.gitkeep
 
 # Jupyter
 .ipynb_checkpoints/
