@@ -338,17 +338,37 @@ pytest -m "not slow"        # Skip slow tests
 1. **lint** - Code Quality & Linting
    - Runs black, ruff, isort
    - Fast feedback on code style
+   - No external dependencies needed
 
-2. **test** - Run Tests
+2. **pipeline-validation** - Pipeline Validation (Smoke Tests)
+   - Validates all pipeline scripts exist and are syntactically correct
+   - Checks library modules can be imported
+   - Verifies pipeline structure and configuration files
+   - Fast: no heavy dependencies required
+
+3. **environment-check** - Geospatial Environment Check
+   - Verifies GDAL/PROJ installation compatibility
+   - Tests all critical imports (geopandas, osmnx, h3, tensorly)
+   - Validates CRS support and H3 operations
+   - Catches environment setup issues early
+
+4. **test** - Unit Tests
+   - Runs unit tests for utilities and geospatial functions
    - Installs GDAL system dependencies
    - Runs pytest with coverage
    - Uploads coverage to Codecov
 
-3. **security** - Security Scan
+5. **documentation** - Documentation Validation
+   - Validates CLAUDE.md exists and is up-to-date
+   - Checks all pipeline scripts are documented
+   - Verifies file references in documentation
+   - Ensures CI/CD setup is documented
+
+6. **security** - Security Scan
    - Runs `safety` to check for vulnerable dependencies
    - Uses TruffleHog to detect secrets in commits
 
-4. **notebook-quality** - Notebook Quality Check
+7. **notebook-quality** - Notebook Quality Check
    - Ensures notebooks have outputs cleared
    - Checks for hardcoded absolute paths
 
