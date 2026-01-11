@@ -35,8 +35,64 @@ jobs:
       - name: Run isort
         run: isort --check-only --diff notebooks/
 
+  pipeline-validation:
+    name: Pipeline Validation (Smoke Tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest PyYAML
+
+      - name: Run pipeline validation tests
+        run: |
+          pytest tests/test_pipeline.py -v
+
+  environment-check:
+    name: Geospatial Environment Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdal-bin libgdal-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Install GDAL Python bindings matching system version
+          pip install GDAL==$(gdal-config --version)
+          # Install other dependencies (excluding GDAL from requirements.txt)
+          grep -v "^GDAL==" requirements.txt > /tmp/requirements-no-gdal.txt
+          pip install -r /tmp/requirements-no-gdal.txt
+          pip install pytest
+
+      - name: Run environment tests
+        run: |
+          pytest tests/test_environment.py -v
+
   test:
-    name: Run Tests
+    name: Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -64,9 +120,9 @@ jobs:
           pip install -r /tmp/requirements-no-gdal.txt
           pip install pytest pytest-cov
 
-      - name: Run tests
+      - name: Run unit tests
         run: |
-          pytest --cov=notebooks --cov-report=xml --cov-report=term
+          pytest tests/test_utils.py tests/test_geo_utils.py --cov=notebooks --cov-report=xml --cov-report=term
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
@@ -75,6 +131,28 @@ jobs:
           files: ./coverage.xml
           flags: unittests
           fail_ci_if_error: false
+
+  documentation:
+    name: Documentation Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Run documentation tests
+        run: |
+          pytest tests/test_documentation.py -v
 
   security:
     name: Security Scan
