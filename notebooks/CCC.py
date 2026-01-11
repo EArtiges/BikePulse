@@ -1,17 +1,12 @@
 import numpy as np
-from scipy.cluster.hierarchy import linkage, cophenet
+from scipy.cluster.hierarchy import cophenet, linkage
 from scipy.spatial.distance import squareform
-from app.oslo_lib import bootstrap_T
 
-def get_consensus_matrix(n_components, 
-                         factorization, 
-                         T, 
-                         nruns=100, 
-                         init='svd', 
-                         use_W=True):
-    
+
+def get_consensus_matrix(n_components, factorization, T, nruns=100, init="svd", use_W=True):
+
     As = []
-    
+
     for run in range(nruns):
         T_ = T
         temporal_factors, W, H = factorization(T_, rank=n_components, init=init).factors
@@ -19,35 +14,39 @@ def get_consensus_matrix(n_components,
             As.append(get_adjacency_matrix(W))
         else:
             As.append(get_adjacency_matrix(H))
-        
+
     return np.array(As, dtype=float).mean(axis=0)
+
 
 def get_adjacency_matrix(W):
     NMF_clustering = get_NMF_clustering(W)
     l = len(NMF_clustering)
-    A = np.zeros((l,l))
+    A = np.zeros((l, l))
     for i in range(l):
         for j in range(l):
-            if NMF_clustering[i]==NMF_clustering[j]:
-                A[i,j] = 1
+            if NMF_clustering[i] == NMF_clustering[j]:
+                A[i, j] = 1
     return A
 
+
 def get_NMF_clustering(W):
-    return {i:get_max_index(w) for i, w in enumerate(W)}
+    return {i: get_max_index(w) for i, w in enumerate(W)}
+
 
 def get_max_index(a):
-    return np.where(a==a.max())[0][0]
+    return np.where(a == a.max())[0][0]
+
 
 def get_CCC(C, D):
-    
+
     # https://www.pnas.org/doi/10.1073/pnas.0308531101#sec-1
     # https://uk.mathworks.com/help/stats/cophenet.html
 
     C_off = np.identity(len(C)) - C
-    
+
     avg_c = C_off.mean()
     avg_d = D.mean()
-    
+
     n_clusters = len(C_off)
     num = 0
     den_1 = 0
@@ -57,26 +56,17 @@ def get_CCC(C, D):
             c = C_off[i, j]
             d = D[i, j]
             num += (c - avg_c) * (d - avg_d)
-            den_1 += (c - avg_c)**2
-            den_2 += (d - avg_d)**2
-                
-    den = (den_1 * den_2)**.5
-    
-    return num/den
+            den_1 += (c - avg_c) ** 2
+            den_2 += (d - avg_d) ** 2
 
-def compute_rho(n_components, 
-                factorization, 
-                T, 
-                nruns=100, 
-                init='svd', 
-                use_W=True):
-    C = get_consensus_matrix(n_components, 
-                             factorization, 
-                             T, 
-                             nruns, 
-                             init=init, 
-                             use_W=use_W)
-    L = linkage(C, 'average')
-    coph_distances = squareform(cophenet(L)) 
+    den = (den_1 * den_2) ** 0.5
+
+    return num / den
+
+
+def compute_rho(n_components, factorization, T, nruns=100, init="svd", use_W=True):
+    C = get_consensus_matrix(n_components, factorization, T, nruns, init=init, use_W=use_W)
+    L = linkage(C, "average")
+    coph_distances = squareform(cophenet(L))
     rho = get_CCC(C, coph_distances)
     return rho
