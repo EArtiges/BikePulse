@@ -21,7 +21,7 @@ geopandas==1.1.0
 geopy==2.4.1
 h3==4.2.2
 h3pandas==0.3.0
-idna==3.10
+idna==3.11
 imageio==2.37.0
 ipykernel==6.29.5
 ipython==9.3.0
