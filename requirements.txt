@@ -40,7 +40,7 @@ networkx==3.5
 numpy==2.3.0
 osmnx==2.0.3
 packaging==25.0
-pandas==2.3.0
+pandas==2.3.3
 parso==0.8.4
 pexpect==4.9.0
 pillow==11.2.1
